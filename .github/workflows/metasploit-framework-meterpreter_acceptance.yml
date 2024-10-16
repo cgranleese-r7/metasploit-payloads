@@ -212,6 +212,29 @@ jobs:
           repository: rapid7/metasploit-payloads
           path: metasploit-payloads
           ref: ${{ env.metasploitPayloadsCommit }}
+          
+      - name: Get metasploit-payloads version
+        run: |
+          echo "METASPLOIT_PAYLOADS_VERSION=$(grep -oh '[0-9].[0-9].[0-9]*' gem/lib/metasploit-payloads/version.rb)" | tee -a $GITHUB_ENV
+        working-directory: metasploit-payloads
+
+      - name: Build metasploit-payloads gem
+        run: |
+          gem build gem/metasploit-payloads.gemspec
+        working-directory: metasploit-payloads
+
+      - name: Copy metasploit-payloads gem into metasploit-framework
+        run: |
+          cp ../metasploit-payloads/metasploit-payloads-${{ env.METASPLOIT_PAYLOADS_VERSION }}.gem .
+        working-directory: metasploit-framework
+
+      - name: Install metasploit-payloads gem
+        run: |
+          bundle exec gem install metasploit-payloads-${{ env.METASPLOIT_PAYLOADS_VERSION }}.gem
+          bundle config unset deployment
+          bundle update metasploit-payloads
+          bundle install
+        working-directory: metasploit-framework
 
       - name: Build Windows payloads via Visual Studio 2019 Build (Windows)
         shell: cmd
